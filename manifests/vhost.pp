@@ -35,7 +35,6 @@ define nginx::vhost (
 ) {
 
   include nginx
-  include nginx::params
 
   $real_owner = $owner ? {
     ''      => $nginx::config_file_owner,
@@ -54,8 +53,8 @@ define nginx::vhost (
     mode    => $nginx::config_file_mode,
     owner   => $nginx::config_file_owner,
     group   => $nginx::config_file_group,
-    require => Package['nginx'],
-    notify  => Service['nginx'],
+    require => Package[$nginx::package],
+    notify  => Service[$nginx::service],
   }
 
   # Some OS specific settings:
@@ -70,8 +69,8 @@ define nginx::vhost (
       file { "NginxVHostEnabled_${name}":
         ensure  => $manage_file,
         path    => "${nginx::vdir_enable}/${priority}-${name}.conf",
-        require => Package['nginx'],
-        notify  => Service['nginx'],
+        require => Package[$nginx::package],
+        notify  => Service[$nginx::service],
       }
     }
     redhat,centos,scientific,fedora: {

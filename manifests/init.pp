@@ -8,11 +8,6 @@
 # Standard class parameters
 # Define the general class behaviour and customizations
 #
-# [*my_class*]
-#   Name of a custom class to autoload to manage module's customizations
-#   If defined, nginx class will automatically "include $my_class"
-#   Can be defined also by the (top scope) variable $nginx_myclass
-#
 # [*source*]
 #   Sets the content of source parameter for main configuration file
 #   If defined, nginx main config file will have the param: source => $source
@@ -64,38 +59,6 @@
 #   Use this when the service is managed by a tool like a cluster software
 #   Can be defined also by the (top scope) variable $nginx_disableboot
 #
-# [*monitor*]
-#   Set to 'true' to enable monitoring of the services provided by the module
-#   Can be defined also by the (top scope) variables $nginx_monitor
-#   and $monitor
-#
-# [*monitor_tool*]
-#   Define which monitor tools (ad defined in Example42 monitor module)
-#   you want to use for nginx checks
-#   Can be defined also by the (top scope) variables $nginx_monitor_tool
-#   and $monitor_tool
-#
-# [*monitor_target*]
-#   The Ip address or hostname to use as a target for monitoring tools.
-#   Default is the fact $ipaddress
-#   Can be defined also by the (top scope) variables $nginx_monitor_target
-#   and $monitor_target
-#
-# [*monitor_config_hash*]
-#   A generic Hash that will be passed to certain monitoring Implementations
-#
-# [*puppi*]
-#   Set to 'true' to enable creation of module data files that are used by puppi
-#   Can be defined also by the (top scope) variables $nginx_puppi and $puppi
-#
-# [*puppi_helper*]
-#   Specify the helper to use for puppi commands. The default for this module
-#   is specified in params.pp and is generally a good choice.
-#   You can customize the output of puppi commands for this module using another
-#   puppi helper. Use the define puppi::helper to create a new custom helper
-#   Can be defined also by the (top scope) variables $nginx_puppi_helper
-#   and $puppi_helper
-#
 # [*firewall*]
 #   Set to 'true' to enable firewalling of the services provided by the module
 #   Can be defined also by the (top scope) variables $nginx_firewall
@@ -116,10 +79,6 @@
 #   Define which destination ip to use for firewalling. Default: $ipaddress
 #   Can be defined also by the (top scope) variables $nginx_firewall_dst
 #   and $firewall_dst
-#
-# [*debug*]
-#   Set to 'true' to enable modules debugging
-#   Can be defined also by the (top scope) variables $nginx_debug and $debug
 #
 # [*audit_only*]
 #   Set to 'true' if you don't intend to override existing configuration files
@@ -177,15 +136,11 @@
 # [*process*]
 #   The name of nginx process
 #
-# [*process_args*]
-#   The name of nginx arguments. Used by puppi and monitor.
-#   Used only in case the nginx process name is generic (java, ruby...)
-#
 # [*process_user*]
-#   The name of the user nginx runs with. Used by puppi and monitor.
+#   The name of the user nginx runs with.
 #
 # [*config_dir*]
-#   Main configuration directory. Used by puppi
+#   Main configuration directory.
 #
 # [*config_file*]
 #   Main configuration file path
@@ -206,26 +161,24 @@
 #   Set to 'true' to purge the default configuration file
 #
 # [*pid_file*]
-#   Path of pid file. Used by monitor
+#   Path of pid file.
 #
 # [*data_dir*]
-#   Path of application data directory. Used by puppi
+#   Path of application data directory.
 #
 # [*log_dir*]
-#   Base logs directory. Used by puppi
+#   Base logs directory.
 #
 # [*log_file*]
-#   Log file(s). Used by puppi
+#   Log file(s)
 #
 # [*port*]
 #   The listening port, if any, of the service.
-#   This is used by monitor, firewall and puppi (optional) components
 #   Note: This doesn't necessarily affect the service configuration file
 #   Can be defined also by the (top scope) variable $nginx_port
 #
 # [*protocol*]
 #   The protocol used by the the service.
-#   This is used by monitor, firewall and puppi (optional) components
 #   Can be defined also by the (top scope) variable $nginx_protocol
 #
 #
@@ -242,70 +195,50 @@
 #   Alessandro Franceschi <al@lab42.it/>
 #
 class nginx (
-  $gzip                = params_lookup( 'gzip' ),
-  $worker_connections  = params_lookup( 'worker_connections' ),
-  $multi_accept        = params_lookup( 'multi_accept' ),
-  $keepalive_timeout   = params_lookup( 'keepalive_timeout' ),
-  $server_names_hash_max_size     = params_lookup( 'server_names_hash_max_size' ),
-  $server_names_hash_bucket_size  = params_lookup( 'server_names_hash_bucket_size' ),
-  $client_max_body_size           = params_lookup( 'client_max_body_size' ),
-  $types_hash_max_size = params_lookup( 'types_hash_max_size' ),
-  $sendfile            = params_lookup( 'sendfile' ),
-  $my_class            = params_lookup( 'my_class' ),
-  $source              = params_lookup( 'source' ),
-  $source_dir          = params_lookup( 'source_dir' ),
-  $source_dir_purge    = params_lookup( 'source_dir_purge' ),
-  $template            = params_lookup( 'template' ),
-  $service_autorestart = params_lookup( 'service_autorestart' , 'global' ),
-  $options             = params_lookup( 'options' ),
-  $version             = params_lookup( 'version' ),
-  $absent              = params_lookup( 'absent' ),
-  $disable             = params_lookup( 'disable' ),
-  $disableboot         = params_lookup( 'disableboot' ),
-  $monitor             = params_lookup( 'monitor' , 'global' ),
-  $monitor_tool        = params_lookup( 'monitor_tool' , 'global' ),
-  $monitor_target      = params_lookup( 'monitor_target' , 'global' ),
-  $monitor_config_hash = params_lookup( 'monitor_config_hash' ),
-  $puppi               = params_lookup( 'puppi' , 'global' ),
-  $puppi_helper        = params_lookup( 'puppi_helper' , 'global' ),
-  $firewall            = params_lookup( 'firewall' , 'global' ),
-  $firewall_tool       = params_lookup( 'firewall_tool' , 'global' ),
-  $firewall_src        = params_lookup( 'firewall_src' , 'global' ),
-  $firewall_dst        = params_lookup( 'firewall_dst' , 'global' ),
-  $debug               = params_lookup( 'debug' , 'global' ),
-  $audit_only          = params_lookup( 'audit_only' , 'global' ),
-  $package             = params_lookup( 'package' ),
-  $service             = params_lookup( 'service' ),
-  $service_status      = params_lookup( 'service_status' ),
-  $service_restart     = params_lookup( 'service_restart' ),
-  $process             = params_lookup( 'process' ),
-  $process_args        = params_lookup( 'process_args' ),
-  $process_user        = params_lookup( 'process_user' ),
-  $config_dir          = params_lookup( 'config_dir' ),
-  $config_file         = params_lookup( 'config_file' ),
-  $config_file_mode    = params_lookup( 'config_file_mode' ),
-  $config_file_owner   = params_lookup( 'config_file_owner' ),
-  $config_file_group   = params_lookup( 'config_file_group' ),
-  $config_file_init    = params_lookup( 'config_file_init' ),
-  $config_file_default_purge = params_lookup( 'config_file_default_purge'),
-  $pid_file            = params_lookup( 'pid_file' ),
-  $data_dir            = params_lookup( 'data_dir' ),
-  $log_dir             = params_lookup( 'log_dir' ),
-  $log_file            = params_lookup( 'log_file' ),
-  $port                = params_lookup( 'port' ),
-  $protocol            = params_lookup( 'protocol' ),
+  $gzip                          = $nginx::params::gzip,
+  $worker_connections            = $nginx::params::worker_connections,
+  $multi_accept                  = $nginx::params::multi_accept,
+  $keepalive_timeout             = $nginx::params::keepalive_timeout,
+  $server_names_hash_max_size    = $nginx::params::server_names_hash_max_size,
+  $server_names_hash_bucket_size = $nginx::params::server_names_hash_bucket_size,
+  $client_max_body_size          = $nginx::params::client_max_body_size,
+  $types_hash_max_size           = $nginx::params::types_hash_max_size,
+  $sendfile                      = $nginx::params::sendfile,
+  $source                        = $nginx::params::source,
+  $source_dir                    = $nginx::params::source_dir,
+  $source_dir_purge              = $nginx::params::source_dir_purge,
+  $template                      = $nginx::params::template,
+  $service_autorestart           = $nginx::params::service_autorestart,
+  $options                       = $nginx::params::options,
+  $version                       = $nginx::params::version,
+  $absent                        = $nginx::params::absent,
+  $disable                       = $nginx::params::disable,
+  $disableboot                   = $nginx::params::disableboot,
+  $firewall                      = $nginx::params::firewall,
+  $firewall_tool                 = $nginx::params::firewall_tool,
+  $firewall_src                  = $nginx::params::firewall_src,
+  $firewall_dst                  = $nginx::params::firewall_dst,
+  $audit_only                    = $nginx::params::audit_only,
+  $package                       = $nginx::params::package,
+  $service                       = $nginx::params::service,
+  $service_status                = $nginx::params::service_status,
+  $service_restart               = $nginx::params::service_restart,
+  $process                       = $nginx::params::process,
+  $process_user                  = $nginx::params::process_user,
+  $config_dir                    = $nginx::params::config_dir,
+  $config_file                   = $nginx::params::config_file,
+  $config_file_mode              = $nginx::params::config_file_mode,
+  $config_file_owner             = $nginx::params::config_file_owner,
+  $config_file_group             = $nginx::params::config_file_group,
+  $config_file_init              = $nginx::params::config_file_init,
+  $config_file_default_purge     = $nginx::params::config_file_default_purg,
+  $pid_file                      = $nginx::params::pid_file,
+  $data_dir                      = $nginx::params::data_dir,
+  $log_dir                       = $nginx::params::log_dir,
+  $log_file                      = $nginx::params::log_file,
+  $port                          = $nginx::params::port,
+  $protocol                      = $nginx::params::protocol,
   ) inherits nginx::params {
-
-  $bool_source_dir_purge=any2bool($source_dir_purge)
-  $bool_service_autorestart=any2bool($service_autorestart)
-  $bool_absent=any2bool($absent)
-  $bool_disable=any2bool($disable)
-  $bool_disableboot=any2bool($disableboot)
-  $bool_monitor=any2bool($monitor)
-  $bool_puppi=any2bool($puppi)
-  $bool_firewall=any2bool($firewall)
-  $bool_debug=any2bool($debug)
-  $bool_audit_only=any2bool($audit_only)
 
   $real_gzip = $gzip ? {
     'off'     => 'off',
@@ -317,220 +250,158 @@ class nginx (
   ### Calculation of variables that dependes on arguments
   # Debian uses TWO configs dirs separatedly
   $cdir = $::operatingsystem ? {
-    default => "${nginx::config_dir}/conf.d",
+    default => "${config_dir}/conf.d",
   }
 
   $vdir = $::operatingsystem ? {
-    /(?i:Ubuntu|Debian|Mint)/ => "${nginx::config_dir}/sites-available",
-    default                   => "${nginx::config_dir}/conf.d",
+    /(?i:Ubuntu|Debian|Mint)/ => "${config_dir}/sites-available",
+    default                   => "${config_dir}/conf.d",
   }
 
   $vdir_enable = $::operatingsystem ? {
-    /(?i:Ubuntu|Debian|Mint)/ => "${nginx::config_dir}/sites-enabled",
+    /(?i:Ubuntu|Debian|Mint)/ => "${config_dir}/sites-enabled",
     default                   => undef,
   }
 
   ### Definition of some variables used in the module
-  $manage_package = $nginx::bool_absent ? {
+  $manage_package = $absent ? {
     true  => 'absent',
-    false => $nginx::version,
+    false => $version,
   }
 
-  $manage_service_enable = $nginx::bool_disableboot ? {
+  $manage_service_enable = $disableboot ? {
     true    => false,
-    default => $nginx::bool_disable ? {
+    default => $disable ? {
       true    => false,
-      default => $nginx::bool_absent ? {
+      default => $absent ? {
         true  => false,
         false => true,
       },
     },
   }
 
-  $manage_service_ensure = $nginx::bool_disable ? {
+  $manage_service_ensure = $disable ? {
     true    => 'stopped',
-    default =>  $nginx::bool_absent ? {
+    default =>  $absent ? {
       true    => 'stopped',
       default => 'running',
     },
   }
 
-  $manage_service_autorestart = $nginx::bool_service_autorestart ? {
-    true    => 'Service[nginx]',
+  $manage_service_autorestart = $service_autorestart ? {
+    true    => "Service[${service}]",
     false   => undef,
   }
 
-  $manage_file = $nginx::bool_absent ? {
+  $manage_file = $absent ? {
     true    => 'absent',
     default => 'present',
   }
 
-  if $nginx::bool_absent == true
-  or $nginx::bool_disable == true
-  or $nginx::bool_disableboot == true {
-    $manage_monitor = false
-  } else {
-    $manage_monitor = true
-  }
-
-  if $nginx::bool_absent == true or $nginx::bool_disable == true {
+  if $absent == true or $disable == true {
     $manage_firewall = false
   } else {
     $manage_firewall = true
   }
 
-  $manage_audit = $nginx::bool_audit_only ? {
+  $manage_audit = $audit_only ? {
     true  => 'all',
     false => undef,
   }
 
-  $manage_file_replace = $nginx::bool_audit_only ? {
+  $manage_file_replace = $audit_only ? {
     true  => false,
     false => true,
   }
 
-  $manage_file_source = $nginx::source ? {
+  $manage_file_source = $source ? {
     ''        => undef,
-    default   => $nginx::source,
+    default   => $source,
   }
 
-  $manage_file_content = $nginx::template ? {
+  $manage_file_content = $template ? {
     ''        => undef,
-    default   => template($nginx::template),
+    default   => template($template),
   }
 
   ### Managed resources
-  package { 'nginx':
-    ensure => $nginx::manage_package,
-    name   => $nginx::package,
+  package { "${package}":
+    ensure => $manage_package,
   }
 
-  service { 'nginx':
-    ensure     => $nginx::manage_service_ensure,
-    name       => $nginx::service,
-    enable     => $nginx::manage_service_enable,
-    hasstatus  => $nginx::service_status,
-    hasrestart => $nginx::service_restart,
-    pattern    => $nginx::process,
-    require    => Package['nginx'],
+  service { $service:
+    ensure     => $manage_service_ensure,
+    enable     => $manage_service_enable,
+    hasstatus  => $service_status,
+    hasrestart => $service_restart,
+    pattern    => $process,
+    require    => Package[$package],
   }
 
   file { 'nginx.conf':
-    ensure  => $nginx::manage_file,
-    path    => $nginx::config_file,
-    mode    => $nginx::config_file_mode,
-    owner   => $nginx::config_file_owner,
-    group   => $nginx::config_file_group,
-    require => Package['nginx'],
-    notify  => $nginx::manage_service_autorestart,
-    source  => $nginx::manage_file_source,
-    content => $nginx::manage_file_content,
-    replace => $nginx::manage_file_replace,
-    audit   => $nginx::manage_audit,
+    ensure  => $manage_file,
+    path    => $config_file,
+    mode    => $config_file_mode,
+    owner   => $config_file_owner,
+    group   => $config_file_group,
+    require => Package[$package],
+    notify  => $manage_service_autorestart,
+    source  => $manage_file_source,
+    content => $manage_file_content,
+    replace => $manage_file_replace,
+    audit   => $manage_audit,
   }
 
   # The whole nginx configuration directory can be recursively overriden
-  if $nginx::source_dir != '' {
+  if $source_dir != '' {
     file { 'nginx.dir':
       ensure  => directory,
-      path    => $nginx::config_dir,
-      require => Package['nginx'],
-      notify  => $nginx::manage_service_autorestart,
-      source  => $nginx::source_dir,
+      path    => $config_dir,
+      require => Package[$package],
+      notify  => $manage_service_autorestart,
+      source  => $source_dir,
       recurse => true,
-      purge   => $nginx::bool_source_dir_purge,
-      force   => $nginx::bool_source_dir_purge,
-      replace => $nginx::manage_file_replace,
-      audit   => $nginx::manage_audit,
+      purge   => $source_dir_purge,
+      force   => $source_dir_purge,
+      replace => $manage_file_replace,
+      audit   => $manage_audit,
     }
   }
 
   # Purge default vhost configuration
-  if $nginx::config_file_default_purge {
+  if $config_file_default_purge {
     $default_site = $::operatingsystem ? {
       /(?i:Debian|Ubuntu|Mint)/              => [ 'default' ],
       /(?i:Redhat|Centos|Scientific|Fedora)/ => 'default.conf',
     }
 
-    file { "${nginx::vdir}/${default_site}":
+    file { "${vdir}/${default_site}":
       ensure  => absent,
-      require => Package[$nginx::package],
-      notify  => Service[$nginx::service],
+      require => Package[$package],
+      notify  => Service[$service],
     }
 
-    if $nginx::vdir_enable {
-      file { "${nginx::vdir_enable}/${default_site}":
+    if $vdir_enable {
+      file { "${vdir_enable}/${default_site}":
         ensure  => absent,
-        require => Package[$nginx::package],
-        notify  => Service[$nginx::service],
+        require => Package[$package],
+        notify  => Service[$service],
       }
     }
   }
 
 
-  ### Include custom class if $my_class is set
-  if $nginx::my_class != '' {
-    include $nginx::my_class
-  }
-
-
-  ### Provide puppi data, if enabled ( puppi => true )
-  if $nginx::bool_puppi == true {
-    $classvars=get_class_args()
-    puppi::ze { 'nginx':
-      ensure    => $nginx::manage_file,
-      variables => $classvars,
-      helper    => $nginx::puppi_helper,
-    }
-  }
-
-
-  ### Service monitoring, if enabled ( monitor => true )
-  if $nginx::bool_monitor == true {
-    monitor::port { "nginx_${nginx::protocol}_${nginx::port}":
-      protocol => $nginx::protocol,
-      port     => $nginx::port,
-      target   => $nginx::monitor_target,
-      tool     => $nginx::monitor_tool,
-      enable   => $nginx::manage_monitor,
-    }
-    monitor::process { 'nginx_process':
-      process     => $nginx::process,
-      service     => $nginx::service,
-      pidfile     => $nginx::pid_file,
-      user        => $nginx::process_user,
-      argument    => $nginx::process_args,
-      tool        => $nginx::monitor_tool,
-      enable      => $nginx::manage_monitor,
-      config_hash => $nginx::monitor_config_hash,
-    }
-  }
-
-
   ### Firewall management, if enabled ( firewall => true )
-  if $nginx::bool_firewall == true {
-    firewall { "nginx_${nginx::protocol}_${nginx::port}":
-      source      => $nginx::firewall_src,
-      destination => $nginx::firewall_dst,
-      protocol    => $nginx::protocol,
-      port        => $nginx::port,
+  if $firewall == true {
+    firewall { "nginx_${protocol}_${port}":
+      source      => $firewall_src,
+      destination => $firewall_dst,
+      protocol    => $protocol,
+      port        => $port,
       action      => 'allow',
       direction   => 'input',
-      tool        => $nginx::firewall_tool,
-      enable      => $nginx::manage_firewall,
-    }
-  }
-
-
-  ### Debugging, if enabled ( debug => true )
-  if $nginx::bool_debug == true {
-    file { 'debug_nginx':
-      ensure  => $nginx::manage_file,
-      path    => "${settings::vardir}/debug-nginx",
-      mode    => '0640',
-      owner   => 'root',
-      group   => 'root',
-      content => inline_template('<%= scope.to_hash.reject { |k,v| k.to_s =~ /(uptime.*|path|timestamp|free|.*password.*|.*psk.*|.*key)/ }.to_yaml %>'),
+      tool        => $firewall_tool,
+      enable      => $manage_firewall,
     }
   }
 

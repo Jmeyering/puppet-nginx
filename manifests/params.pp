@@ -46,10 +46,6 @@ class nginx::params {
     default => 'nginx',
   }
 
-  $process_args = $::operatingsystem ? {
-    default => '',
-  }
-
   $process_user = $::operatingsystem ? {
     /(?i:Debian|Ubuntu|Mint)/ => 'www-data',
     default => 'nginx',
@@ -100,7 +96,6 @@ class nginx::params {
   $protocol = 'tcp'
 
   # General Settings
-  $my_class = ''
   $source = ''
   $source_dir = ''
   $source_dir_purge = false
@@ -114,16 +109,9 @@ class nginx::params {
   $disableboot = false
 
   ### General module variables that can have a site or per module default
-  $monitor = false
-  $monitor_tool = ''
-  $monitor_target = $::ipaddress
   $firewall = false
   $firewall_tool = ''
   $firewall_src = '0.0.0.0/0'
   $firewall_dst = $::ipaddress
-  $puppi = false
-  $puppi_helper = 'standard'
-  $debug = false
   $audit_only = false
-
 }
